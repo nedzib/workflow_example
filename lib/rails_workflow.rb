@@ -1,0 +1,2 @@
+module RailsWorkflow
+end

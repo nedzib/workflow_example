@@ -22,8 +22,28 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-slate-50 min-h-screen">
+    <header class="bg-white border-b border-slate-200 shadow-sm">
+      <div class="container mx-auto px-5 py-4 flex items-center justify-between">
+        <h1 class="text-xl font-semibold"><%= link_to "Workflow Demo", root_path, class: "text-slate-900" %></h1>
+        <nav class="space-x-4">
+          <% if user_signed_in? %>
+            <span class="text-sm text-slate-600">Sesión iniciada como <%= current_user.email %></span>
+            <%= button_to "Cerrar sesión", destroy_user_session_path, method: :delete, class: "text-sm text-red-600" %>
+          <% else %>
+            <%= link_to "Iniciar sesión", new_user_session_path, class: "text-sm text-blue-600" %>
+            <%= link_to "Registrarse", new_user_registration_path, class: "text-sm text-blue-600" %>
+          <% end %>
+        </nav>
+      </div>
+    </header>
+    <main class="container mx-auto mt-12 px-5">
+      <% if notice.present? %>
+        <div class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-green-800"><%= notice %></div>
+      <% end %>
+      <% if alert.present? %>
+        <div class="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800"><%= alert %></div>
+      <% end %>
       <%= yield %>
     </main>
   </body>
