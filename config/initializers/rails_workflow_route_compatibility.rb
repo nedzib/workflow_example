@@ -1,47 +1,57 @@
 module WorkflowExample
   module RailsWorkflowRouteCompatibility
     RETRY_ACTION = :retry
-    HTTP_METHOD = :post
 
     module_function
 
-    def ensure_retry_action_support(resource)
-      add_action_to_array_constant(resource, :VALID_ACTIONS)
-      add_action_to_array_constant(resource, :CANONICAL_ACTIONS)
-      add_action_to_hash_constant(resource, :HTTP_METHODS, HTTP_METHOD)
-      add_action_to_hash_constant(resource, :RESOURCE_METHODS, HTTP_METHOD)
-      add_action_to_array_constant(resource, :RESOURCE_ACTIONS)
+    # Rails 8 tightened the allowed actions for +resources+. The RailsWorkflow
+    # gem still attempts to pass +:retry+ inside the +:only+ or +:except+
+    # options, which now raises an exception. Instead of patching Rails to make
+    # the action valid again we simply strip it from those options before Rails
+    # performs its validation. This keeps the application bootable without
+    # exposing a retry REST action that we do not use.
+    def sanitize_retry_options(options)
+      sanitized = nil
+
+      %i[only except].each do |key|
+        next unless options.key?(key)
+
+        values = Array(options[key])
+        next unless values.include?(RETRY_ACTION)
+
+        sanitized ||= options.dup
+        sanitized_values = values - [RETRY_ACTION]
+
+        if sanitized_values.empty?
+          sanitized.delete(key)
+        else
+          sanitized[key] = sanitized_values
+        end
+      end
+
+      sanitized
     end
 
-    def add_action_to_array_constant(resource, const_name)
-      return unless resource.const_defined?(const_name, false)
+    def remove_retry_from_resource_options(_mapper, resources)
+      return unless resources.last.is_a?(Hash)
 
-      actions = resource.const_get(const_name)
-      return unless actions.respond_to?(:include?)
-      return if actions.include?(RETRY_ACTION)
+      sanitized_options = sanitize_retry_options(resources.last)
+      return unless sanitized_options
 
-      new_actions = actions.respond_to?(:dup) ? actions.dup : Array(actions)
-      new_actions << RETRY_ACTION
-
-      resource.const_set(const_name, new_actions)
-    end
-
-    def add_action_to_hash_constant(resource, const_name, value)
-      return unless resource.const_defined?(const_name, false)
-
-      mapping = resource.const_get(const_name)
-      return unless mapping.respond_to?(:key?) && mapping.respond_to?(:merge)
-      return if mapping.key?(RETRY_ACTION)
-
-      resource.const_set(const_name, mapping.merge(RETRY_ACTION => value))
+      resources[-1] = sanitized_options
     end
   end
 end
 
-Rails.application.config.to_prepare do
-  next unless defined?(ActionDispatch::Routing::Mapper::Resource)
-
-  WorkflowExample::RailsWorkflowRouteCompatibility.ensure_retry_action_support(
-    ActionDispatch::Routing::Mapper::Resource
-  )
+module WorkflowExample
+  module Routing
+    module RetryFilter
+      def resources(*resources, &block)
+        WorkflowExample::RailsWorkflowRouteCompatibility.remove_retry_from_resource_options(self, resources)
+        super
+      end
+    end
+  end
 end
+
+ActionDispatch::Routing::Mapper.prepend(WorkflowExample::Routing::RetryFilter)
