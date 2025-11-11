@@ -1,0 +1,13 @@
+es:
+  time:
+    formats:
+      short: "%d/%m/%Y %H:%M"
+      long: "%d de %B de %Y, %H:%M"
+  devise:
+    sessions:
+      signed_in: "Sesión iniciada correctamente."
+      signed_out: "Sesión cerrada correctamente."
+  helpers:
+    submit:
+      user:
+        create: "Registrar usuario"
