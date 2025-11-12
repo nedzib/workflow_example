@@ -3,6 +3,10 @@ Rails.application.routes.draw do
 
   devise_for :users, path: "auth"
 
+  namespace :admin do
+    resources :workflows, only: [:index]
+  end
+
   resources :operations, only: [:show] do
     post :complete, on: :member
     post :skip, on: :member

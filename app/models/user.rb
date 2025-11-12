@@ -5,6 +5,10 @@ class User < ApplicationRecord
 
   after_create :start_onboarding_workflow
 
+  def admin?
+    email == "admin@example.com"
+  end
+
   private
 
   def start_onboarding_workflow

@@ -22,6 +22,8 @@
    bin/dev
    ```
 
+4. Accede con el usuario administrador (`admin@example.com` / `password123`) y abre el tablero en `/admin/workflows` desde el enlace “Tablero de workflows” en la barra superior.
+
 ## Descripción del workflow
 
 El proyecto incluye una implementación simplificada del motor `rails_workflow` que permite definir plantillas de procesos y operaciones.
